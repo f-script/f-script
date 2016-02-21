@@ -1,0 +1,3 @@
+var <%-className-%> = new fscript.__makeClass__("<%-className-%>",<%-baseClass-%>,function(){
+	<%-classBody-%>
+},<%-metaClass-%>);

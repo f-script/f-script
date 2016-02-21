@@ -1,0 +1,25 @@
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+    <%if(umdCmdImportNames){%>
+        define(['f-script-lib/fscript.js',<%-amdImportNames-%>], factory);
+    <%}else{%>
+        define(['f-script-lib/fscript.js'], factory);
+    <%}%>
+    } else if (typeof module === 'object' && module.exports) {
+    <%if(umdCmdImportNames){%>
+        module.exports= factory(require('f-script-lib'),<%-umdCmdImportNames-%>);
+    <%}else{%>
+        module.exports= factory(require('f-script-lib'));
+    <%}%>
+    } else {
+        root.<%-fileName%> = factory(<%-browserRef-%>);
+    }
+<%if(refNames){%>
+}(this, function (fscript,<%-refNames%>) {
+<%}else{%>
+}(this, function (fscript) {
+<%}%>
+    'use strict';
+<%-script%>
+    return <%-cmdExports%>;
+}));

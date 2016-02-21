@@ -1,0 +1,37 @@
+var <%-className-%> = function (){
+    return <%-className-%>.__meta__.__new__.apply(this,arguments);
+}
+<%-className-%>.__class__ = <%-className-%>;
+<%-className-%>.__className__ = "<%-className-%>";
+<%if(baseClass){%>
+    <%-className-%>.__baseClass__ = <%-baseClass-%>;
+<%}else{%>
+    <%-className-%>.__baseClass__ = null;
+<%}%>
+<%if(extendsNames){%>
+    <%-className-%>.__extendsClasses__ = <%-extendsNames-%>;
+<%}else{%>
+    <%-className-%>.__extendsClasses__ = [];
+<%}%>
+<%-className-%>.__meta__ = {
+    __new__:function(){
+        var Obj = {<%-className-%>:function(){}};
+        <%-className-%>.__meta__.__attr__.apply(Obj);
+        if(arguments.length)
+            Obj.<%-className-%>.apply(Obj,arguments);
+        if(<%-className-%>.__baseClass__){
+            var upper = <%-className-%>.__baseClass__.__meta__.__new__();
+            <%-className-%>.__extendsClasses__=<%-className-%>.__extendsClasses__.concat(<%-className-%>.__baseClass__.__extendsClasses__);
+            Obj.upper = upper;
+            for(var key in upper){
+                if(!Obj[key]){
+                    Obj[key]=upper[key];
+                }
+            }
+        }
+        return Obj;
+    },
+    __attr__:function () {
+        <%-classBody%>
+    },
+};

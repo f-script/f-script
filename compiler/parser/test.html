@@ -1,0 +1,21 @@
+<html width="100%">
+	<head>
+		<script src="f-script.js"></script>
+	</head>
+	<body width="100%">
+		<textarea id="input" style="float:left;width:50%;height:400px;"></textarea>
+		<pre id="output" style="float:left;width:50%;height:400px;">
+		</pre>
+		<br>
+		<button onclick="parse()">Parse</button>
+	</body>
+
+<script>
+function parse () {
+	var output = parser.parse(document.getElementById("input").value);
+	console.log(parser.use);
+	console.log(output);
+	document.getElementById("output").innerText = JSON.stringify(output,null,4);
+}
+</script>
+</html>

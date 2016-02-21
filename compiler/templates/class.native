@@ -1,0 +1,3 @@
+var <%-className-%> = new __makeClass__("<%-className-%>",<%-baseClass-%>,function(){
+	<%-classBody-%>
+},<%-metaClass-%>);

@@ -1,0 +1,15 @@
+{
+  "author": "Zhifei Fang <facetothefate@gmail.com>",
+  "name": "f-script",
+  "description": "Full stack JavaScript:f-script",
+  "license": "MIT",
+  "version": "0.1.0",
+  "bin": "f-script.js",
+  "dependencies": {
+    "commander": "^2.9.0",
+    "ejs": "^2.4.1",
+    "jison": "^0.4.15",
+    "shelljs": "^0.6.0",
+    "f-script-lib":"^0.1.0"
+  }
+}

@@ -1,0 +1,5 @@
+define(['f-script-lib/fscript.js'<%if(amdImportNames){%>,<%}%><%-amdImportNames->],function(fscript<%if(refNames){%>,<%}%><%-refNames->){
+    'use strict';
+<%-script%>
+    return <%-cmdExports>;
+});"

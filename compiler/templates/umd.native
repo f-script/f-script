@@ -1,0 +1,13 @@
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define([<%-amdImportNames-%>], factory);
+    } else if (typeof module === 'object' && module.exports) {
+        module.exports= factory( <%-umdCmdImportNames-%>);
+    } else {
+        root.<%-fileName%> = factory(<%-browserRef-%>);
+    }
+}(this, function (<%-refNames%>) {
+    'use strict';
+<%-script%>
+    return <%-cmdExports%>;
+}));

@@ -1,0 +1,5 @@
+'use strict';
+var fscript = require('f-script-lib');
+<%-cmdImportNames%>
+<%-script%>
+module.exports=<%-cmdExports%>;
