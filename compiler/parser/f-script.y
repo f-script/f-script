@@ -7,6 +7,7 @@
 \/\/[\w\W]*?[\n|\n\r]   /* skip comment */
 \/\/[\w\W]*?$           /* skip comment */
 \\                      /* skip line connector */
+\<\%[\w\W]*?\%\>            /* skip template control string*/
 
 /******************************
     keywords of f-script only
@@ -26,6 +27,10 @@
 
 /*decorator*/
 "@"                     return "AT"
+
+/*template*/
+"template"              return "TEMPLATE"
+"#"                     return "POUND"
 
 /****************************************
     keywords of f-script and ecmascript
@@ -257,6 +262,7 @@ CallExpr
     | CallExpr Arguments
     | CallExpr LBRACK Expr RBRACK
     | CallExpr DOT IDENT
+    | TemplateCallExpr
     ;
 
 CallExprNoBF
@@ -264,6 +270,7 @@ CallExprNoBF
     | CallExprNoBF Arguments
     | CallExprNoBF LBRACK Expr RBRACK
     | CallExprNoBF DOT IDENT
+    | TemplateCallExpr
     ;
 
 Arguments
@@ -779,6 +786,8 @@ FscriptPackageStatement
 
 FscriptStatement
     : ClassDefStatement
+    | TemplateDefStatement
+    | TemplateCallStatement
     ;
 
 ImportStatement
@@ -834,7 +843,6 @@ ExportStatement
             if(!this.export){
                 this.export=[];
             };
-            console.log($2);
             this.export=this.export.concat($2);
             var del_info = {
                     start:[this._$.first_line,this._$.first_column],
@@ -899,7 +907,7 @@ ClassDefStatement
                 'classBody':$6,
                 'extendsNames': $3,
                 'metaClass': $4
-            }
+            };
             var mod_info = {
                 pos:{
                     start:[this._$.first_line,this._$.first_column],
@@ -908,7 +916,7 @@ ClassDefStatement
                 meta: meta,
                 template:"class",
                 content: ""
-            }
+            };
             if(typeof this.modifyLines === 'object' && this.modifyLines.length){
                 this.modifyLines.push(mod_info);
             }else{
@@ -931,5 +939,60 @@ MetaClass
     | META PackageMember {$$=$2.join('.');}
     ;
 
-DecoratorStatement
-    :
+TemplateDefStatement
+    : TEMPLATE IDENT LPAREN TemplateArguments RPAREN LBRACE FunctionBody RBRACE
+        { 
+            if(!this.templates){
+                this.templates=[];
+            };
+            this.templates.push({
+                name:$2,
+                arguments:$4,
+                content:$7,
+            });
+            var del_info = {
+                start:[this._$.first_line,this._$.first_column],
+                end:[this._$.last_line,this._$.last_column]
+            }
+            if(typeof this.delLines === 'object' && this.delLines.length){
+                this.delLines.push(del_info);
+            }else{
+                this.delLines=[del_info];
+            }
+        }
+    ;
+
+TemplateArguments
+    : 
+    | TemplateArgument {$$=[$1]}
+    | TemplateArguments COMMA TemplateArgument {$$=$1.push($2)}
+    ;
+
+TemplateArgument
+    : STRING {$$={argument:$1,type:"string"}}
+    | NUMBER {$$={argument:$1,type:"number"}}
+    | IDENT  {$$={argument:$1,type:"var"}}
+    ;
+
+TemplateCallExpr
+    : POUND PackageMember LPAREN ArgumentList RPAREN
+        {
+            var pos = {
+                    start:[this._$.first_line,this._$.first_column],
+                    end:[this._$.last_line,this._$.last_column]
+                };
+            var mod_info = {
+                pos:pos,
+                meta:{
+                    type:"templateCall",
+                    callPos:pos
+                },
+                content: ""
+            }
+            if(typeof this.modifyLines === 'object' && this.modifyLines.length){
+                this.modifyLines.push(mod_info);
+            }else{
+                this.modifyLines=[mod_info];
+            }
+        }
+    ;

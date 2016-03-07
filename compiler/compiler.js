@@ -4,6 +4,7 @@ var fs = require('fs');
 var ejs = require('ejs');
 var modifyMetaHooks={
     'class':handleClassModify,
+    'templateCall':handleTemplateCallModify,
 }
 var debugFlag = false;
 function getTemplateStr(templatePath,name){
@@ -11,7 +12,7 @@ function getTemplateStr(templatePath,name){
 }
 //all code templates 
 var templateStrs = {}
-function handleClassModify(meta,lines){
+function handleClassModify(meta,lines,content){
     if(!meta.metaClass){
         meta.metaClass="null";
     }
@@ -31,6 +32,67 @@ function handleClassModify(meta,lines){
         meta.extendsNames = "null";
         meta.baseClass = "null";
     }
+    return content;
+}
+function handleTemplateCallModify(meta,lines,content){
+    if(meta.callPos){
+        content = getLines(meta.callPos,lines).join('\n');
+    }
+    content="<%-"+content.replace('#','')+"%>";
+    return content;
+}
+function regsiterFsTemplate(meta,lines,templates){
+    var body = getLines(meta.content,lines);
+    var args = [];
+    var renderArgsMapping = [];
+    var i;
+    var temp;
+    for(i = 0; i < meta.arguments.length; i++){
+        if(meta.arguments.type==="var"){
+            temp = meta.arguments[i].argument;
+            args.push(temp);
+            renderArgsMapping.push(temp+":"+temp);
+        }
+    }
+    if(!templates[meta.name]&&args.length==arguments.length){
+        templates[meta.name] = {arguments:args,body:body,mixin:"",renderArgsMapping:renderArgsMapping};
+    }else if(templates[meta.name]&&args.length!=arguments.length){
+        //add some mixin
+        /*
+            // define the template firstly
+            template F(n){...}
+            // overwrite the content for a setted value
+            template F(0){...}
+            // can be also like this
+            template G(m,n,p,q){...}
+            template G(1,n,p,q){...}
+            template G(1,1,p,q){...}
+            // If the user define the overwrite before the template def
+            template F(0){...} // throw an error here
+            template F(n){...}
+        */
+        var condition = [];
+        var restName = [];
+        var argNames = templates[meta.name].arguments;
+        for(i = 0; i < meta.arguments.length; i++){
+            if(meta.arguments[i].type!=="var"){
+                condition.push(meta.arguments[i].argument+'==='+templates[meta.name].arguments[i])
+            }else{
+                restName.push(meta.arguments[i].argument+':'+templates[meta.name].arguments[i])
+            }
+        }
+        templates[meta.name].mixin+="if("+condition.join(' && ')+"){ return ejs.render("+body+",{"+restName.join(',')+",templates:fsTemplates})"
+    }else{
+        throw new Error("Cannot overwrite template "+meta.name + " before define it");
+    }
+    
+}
+function makeFsTemplateCallable(templates){
+    for(var key in templates){
+        if(templates.hasOwnProperty(key)){
+            templates[key] = new Function(templates[key].arguments,templates[key].mixin+"return ejs.render("+templates[key].body+"{"+templates[key].renderArgsMapping.join(',')+",templates:fsTemplates})")
+        }
+    }
 }
 
 function modifyLines(pos,content,meta,template,lines,packageStd){
@@ -40,8 +102,9 @@ function modifyLines(pos,content,meta,template,lines,packageStd){
     var endline = pos.end[0]-1;
     var endColumn = pos.end[1]-1;
     if(meta){
-        modifyMetaHooks[meta.type](meta,lines);
+        content = modifyMetaHooks[meta.type](meta,lines,content);
     }
+
     //use native
     if(template&&packageStd.indexOf('.native')!=-1){
         if(templateSts[template+'.native']){
@@ -112,6 +175,8 @@ function compile(input,fileName,templatePath,debug){
         'umd.native':getTemplateStr(templatePath,'umd.native'),
         'cmd':getTemplateStr(templatePath,'cmd')
     }
+    //record all the templates defination
+    var fsTemplates ={}
     //jison parser don't support the windows ending
     // may fix this in jison directly
     input=input.replace(/\r\n/g,'\n');
@@ -134,11 +199,6 @@ function compile(input,fileName,templatePath,debug){
     }
     //init the code metrix
     var lines = input.split(/\n|\r/);
-    if(ast.delLines){
-        for(i=0;i<ast.delLines.length;i++){
-            delLines(ast.delLines[i],lines);
-        }
-    }
     if(ast.modifyLines){
         for(i=0;i<ast.modifyLines.length;i++){
             modifyLines(
@@ -149,6 +209,19 @@ function compile(input,fileName,templatePath,debug){
                 lines,ast.use);
         }
     }
+    console.log(lines);
+    //handel the templates
+    if(ast.templates){
+        for(i=0;i<ast.templates.length;i++){
+            regsiterFsTemplate(ast.templates.length[i],lines,fsTemplates)
+        }
+    }
+    if(ast.delLines){
+        for(i=0;i<ast.delLines.length;i++){
+            delLines(ast.delLines[i],lines);
+        }
+    }
+    
     
     //format the lines
     lines = lines.filter(function(val){
@@ -218,8 +291,9 @@ function compile(input,fileName,templatePath,debug){
         refNames:refNames,
         script:output,
         cmdExports:cmdExports,
+        templates:fsTemplates,
     });
-    return {target:output,package:ast.use,related:related};
+    return {target:output,package:ast.use,related:related,templates:fsTemplates};
 }
 
 module.exports = {compile:compile}

@@ -12,8 +12,12 @@
 
 <script>
 function parse () {
-	var output = parser.parse(document.getElementById("input").value);
-	console.log(parser.use);
+	try{
+		var output = fScript.parse(document.getElementById("input").value);
+	}catch(e){
+		console.log(e);
+	}
+	
 	console.log(output);
 	document.getElementById("output").innerText = JSON.stringify(output,null,4);
 }

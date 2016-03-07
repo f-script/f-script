@@ -3,7 +3,7 @@
   "name": "f-script",
   "description": "Full stack JavaScript:f-script",
   "license": "MIT",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "bin": "f-script.js",
   "dependencies": {
     "commander": "^2.9.0",
